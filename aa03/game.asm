@@ -61,15 +61,15 @@ playerAttack:                               # Arg: a0 = playerAddress
     addi $v0, $t0, 0                        # v0 = t0
     jr $ra                                  # return
 
-playerTakeDamage:                           # Arg: a0 = playerAddress, a1 =damage
-    lw $t0, 12($a0)                         # t0 = currentHp
+playerTakeDamage:                           # Arg: a0 = playerAddress, a1 = damage
+    lw $t0, 8($a0)                          # t0 = currentHp
     sub $t0, $t0, $a1                       # currentHp -= damage
 
     bge $t0, $0, donePlayerTakeDamage       # if currentHp < 0
     addi $t0, $0, 0
 
     donePlayerTakeDamage:                   
-        sw $t0, 12($a0)
+        sw $t0, 8($a0)
         jr $ra                              # return
 
 playerSellItem:                             # Args: a0 = playerAddress, a1 = *item
@@ -78,11 +78,11 @@ playerSellItem:                             # Args: a0 = playerAddress, a1 = *it
     lw $t0, 0($t0)
     addi $t1, $0, 0                         # i = 0
     lw $t2, 24($a0)                         # t2 = *inventory
-    lw $t2, 0($t2)                          # t2 = inventory[0]
 
     playerSellItemLoop:
+        lw $t3, 0($t2)                      # t3 = inventory[i]
         bge $t1, $t0, donePlayerSellItem    # while i < PlayerInventorySize
-        beq $t2, $a1, playerSellItemMatch   # if item != inventory[i]
+        beq $t3, $a1, playerSellItemMatch   # if item != inventory[i]
         addi $t2, $t2, 4
         addi $t1, $t1, 1
         j playerSellItemLoop
@@ -102,10 +102,10 @@ playerPickUpItem:                           # Args: a0 = playerAddress, a1 = new
     lw $t0, 0($t0)                          # t0 = PlayerInventorySize
     addi $t1, $0, 0                         # i = 0
     lw $t2, 24($a0)                         # t2 = *inventory
-    lw $t2, 0($t2)                          # t2 = inventory[0]
 
     playerPickUpItemLoop:
-        beq $t2, $0, playerPickUpItemSlot   # if t2 != nullptr
+        lw $t3, 0($t2)                      # t2 = inventory[i]
+        beq $t3, $0, playerPickUpItemSlot   # if t2 != nullptr
         addi $t1, $t1, 1
         addi $t2, $t2, 4
         j playerPickUpItemLoop
@@ -114,14 +114,89 @@ playerPickUpItem:                           # Args: a0 = playerAddress, a1 = new
         sw $a1, 0($t2)                      # inventory[i] -> newItem
         jr $ra
 
-testPlayer:
+testPlayer:                                 # Arg: a0 = playerAddress
     # Implement your testPlayer function here.
+    addi $sp, $sp, -12
+    sw $a0, 0($sp)                          # Store a0 on stack
+    sw $ra, 4($sp)                          # Store ra on stack
+
+    addi $a0, $0, 16                        
+    addi $v0, $0, 9
+    syscall                                 # Request Item space
+    addi $a0, $v0, 0
+    addi $a1, $0, 100
+    addi $a2, $0, 5
+    addi $a3, $0, 6
+    jal itemConstructor                     # Create item1
+
+    addi $a1, $v0, 0                        # a1 = item1
+    lw $a0, 0($sp)                          # a0 = playerAddress
+    sw $a0, 0($sp)                          # Store a0 on stack
+    jal playerPickUpItem                    # player->pickUpItem(item1)
+
+    addi $a0, $0, 16                        
+    addi $v0, $0, 9
+    syscall                                 # Request Item space
+    addi $a0, $v0, 0
+    addi $a1, $0, 120
+    addi $a2, $0, 4
+    addi $a3, $0, 8
+    jal itemConstructor                     # Create item2
+
+    addi $a1, $v0, 0                        # a1 = item2
+    sw $v0, 8($sp)                          # Store item2 on stack
+    lw $a0, 0($sp)                          # a0 = playerAddress
+    sw $a0, 0($sp)                          # Store a0 on stack
+    jal playerPickUpItem                    # player->pickUpItem(item2)
+
+    lw $a0, 0($sp)                          # Load player
+    lw $t0, 24($a0)                         # t0 = player->inventory
+    lw $t0, 0($t0)                          # t0 = player->inventory[0]
+    sw $t0, 20($a0)                         # player->equipped_item = inventory[0]
+
+    jal playerAttack                        # Call playerAttack()
+    addi $a0, $v0, 0                        # a0 = int damage
+    addi $v0, $0 , 1
+    syscall                                 # cout damage
+
+    addi $a0, $0, 10                        # print new line
+    addi $v0, $0, 11
+    syscall
+
+    lw $a0, 0($sp)                          # Load player
+    addi $a1, $0, 10                        # damage = 10
+    jal playerTakeDamage                    # player->playerTakeDamage(10)
+    lw $a0, 0($sp)                          
+    lw $a0, 8($a0)                          # a0 = player->currentHp
+    addi $v0, $0, 1
+    syscall                                 # cout player->currentHp
+
+    addi $a0, $0, 10                        # print new line
+    addi $v0, $0, 11
+    syscall
+
+    lw $a0, 0($sp)                          # Load player
+    lw $a1, 8($sp)                          # Load item2
+    jal playerSellItem                      # player->sellItem(item2)
+    lw $a0, 0($sp)                          # Load player
+    lw $a0, 12($a0)
+    addi $v0, $0, 1
+    syscall                                 # cout player->gold
+
+    lw $ra, 4($sp)
+    addi $sp, $sp, 12
+    jr $ra
+
+    addi $a0, $0, 10                        # print new line
+    addi $v0, $0, 11
+    syscall
     
 main:
     # Allocate heap space for a Player, Warrior, Knight, and Merchant
     addi $a0, $0, 28                        # Allocate space for Player
     addi $v0, $0, 9
     syscall
+
     # Call the constructors.
     addi $a0, $v0, 0
     addi $a1, $0, 100                       # Player(100, 0, 5)
@@ -129,12 +204,10 @@ main:
     addi $a3, $0, 5                         # Player(100, 0, 5)
     jal playerConstructor
 
-    lw $a0, 24($v0)                         # print test
-    addi $v0, $0, 1
-    syscall                                 # expect 0
-
     # Call the testPlayer function with each pointer.
-   
+    addi $a0, $v0, 0                        # a0 = player
+    jal testPlayer                          
+    
     addi $v0, $0, 0                         # return 0;
 end:
     addi $v0, $0, 10
