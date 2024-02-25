@@ -173,6 +173,19 @@ warriorAttack:
         jr $ra                              # return warrior->strength
 
 knightTakeDamage:
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)                          # Store $ra on stack
+
+    lw $t0, 20($a0)                         # t0 = knight->equippedItem
+    beq $t0, $0, doneKnightDamage           # if knight->equippeditem != nullptr
+    lw $t0, 12($t0)                         # t0 = equippedItem->armorBonus
+    sub $a1, $a1, $t0                       # damage = damage - armorBonus
+
+    doneKnightDamage:
+        jal playerTakeDamage                # call playerTakeDamage
+        lw $ra, 0($sp)
+        addi $sp, $sp, 4
+        jr $ra                              # return
 
 testPlayer:                                 # Arg: a0 = playerAddress
     # Implement your testPlayer function here.
@@ -298,9 +311,27 @@ main:
 
     # Call the testPlayer function with Warrior
     addi $a0, $v0, 0                        # a0 = warrior
-    la $t0, WarriorVMT                     # OH->WarriorVMT
+    la $t0, WarriorVMT                      # OH->WarriorVMT
     sw $t0, 0($a0)
     jal testPlayer 
+
+    # Allocate heap space for a Knight
+    addi $a0, $0, 28                        # Allocate space for Knight
+    addi $v0, $0, 9
+    syscall
+
+    # Call the constructors on Knight
+    addi $a0, $v0, 0
+    addi $a1, $0, 100                       # Knight(100, 0, 5)
+    addi $a2, $0, 0                         # Knight100, 0, 5)
+    addi $a3, $0, 5                         # Knight(100, 0, 5)
+    jal playerConstructor
+
+    # Call the testPlayer function with Knight
+    addi $a0, $v0, 0                        # a0 = knight
+    la $t0, KnightVMT                       # OH->KnightVMT
+    sw $t0, 0($a0)
+    jal testPlayer                               
 
     # Allocate heap space for a Merchant
     addi $a0, $0, 28                        # Allocate space for Merchant
@@ -318,7 +349,7 @@ main:
     addi $a0, $v0, 0                        # a0 = merchant
     la $t0, MerchantVMT                     # OH->MerchantVMT
     sw $t0, 0($a0)
-    jal testPlayer                           
+    jal testPlayer    
     
     addi $v0, $0, 0                         # return 0;
 end:
