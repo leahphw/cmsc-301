@@ -19,8 +19,6 @@ itemConstructor:                            # Args: address, gv, ab, armb
     jr $ra                                  # return
 
 playerConstructor:                          # Args: address, mh, g, s
-    la $t0, PlayerVMT
-    sw $t0, 0($a0)                          # OH->PlayerVMT
     sw $a1, 4($a0)                          # maxHp = mh
     sw $a1, 8($a0)                          # currentHp = mh
     sw $a2, 12($a0)                         # gold = g
@@ -114,6 +112,59 @@ playerPickUpItem:                           # Args: a0 = playerAddress, a1 = new
         sw $a1, 0($t2)                      # inventory[i] -> newItem
         jr $ra
 
+merchantSellItem:
+    beq $a1, $0, doneMerchantSellItem       # if item != nullptr
+    la $t0, PlayerInventorySize             # t0 = PlayerInventorySize
+    lw $t0, 0($t0)
+    addi $t1, $0, 0                         # i = 0
+    lw $t2, 24($a0)                         # t2 = *inventory
+
+    merchantSellItemLoop:
+        lw $t3, 0($t2)                      # t3 = inventory[i]
+        bge $t1, $t0, doneMerchantSellItem  # while i < PlayerInventorySize
+        beq $t3, $a1, merchantSellItemMatch # if item != inventory[i]
+        addi $t2, $t2, 4
+        addi $t1, $t1, 1
+        j merchantSellItemLoop
+
+    merchantSellItemMatch:
+        lw $t0, 4($a1)                      # t0 = item->goldValue
+        add $t0, $t0, $t0                   # t0 = 2 * item-> goldValue
+        lw $t1, 12($a0)                     # t1 = player->gold
+        add $t1, $t1, $t0                  
+        sw $t1, 12($a0)                     # player->gold += item->goldValue
+        sw $0, 0($a1)                       # inventory[i] = nullptr
+
+    doneMerchantSellItem:
+        jr $ra
+
+merchantPickUpItem:
+    la $t0, PlayerInventorySize
+    lw $t0, 0($t0)                          # t0 = PlayerInventorySize
+    addi $t1, $0, 0                         # i = 0
+    lw $t2, 24($a0)                         # t2 = *inventory
+
+    merchantPickUpItemLoop:
+        bge $t1, $t0, merchantFullSlot      # if i >= PlayerInventorySize
+        lw $t3, 0($t2)                      # t2 = inventory[i]
+        beq $t3, $0, merchantPickUpItemSlot # if t2 != nullptr
+        addi $t1, $t1, 1
+        addi $t2, $t2, 4
+        j merchantPickUpItemLoop
+    
+    merchantPickUpItemSlot:
+        sw $a1, 0($t2)                      # inventory[i] -> newItem
+        addi $v0, $0, 0                     # return 0 if slot is found
+        jr $ra
+    
+    merchantFullSlot:
+        addi $v0, $0, 1
+        jr $ra
+
+warriorAttack:
+
+knightTakeDamage:
+
 testPlayer:                                 # Arg: a0 = playerAddress
     # Implement your testPlayer function here.
     addi $sp, $sp, -12
@@ -193,30 +244,54 @@ testPlayer:                                 # Arg: a0 = playerAddress
     addi $v0, $0, 1
     syscall                                 # cout player->gold
 
-    lw $ra, 4($sp)
-    addi $sp, $sp, 12
-    jr $ra
+    addi $a0, $0, 10                        # print new line
+    addi $v0, $0, 11
+    syscall
 
     addi $a0, $0, 10                        # print new line
     addi $v0, $0, 11
     syscall
+
+    lw $ra, 4($sp)
+    addi $sp, $sp, 12
+    jr $ra
     
 main:
-    # Allocate heap space for a Player, Warrior, Knight, and Merchant
+    # Allocate heap space for a Player
     addi $a0, $0, 28                        # Allocate space for Player
     addi $v0, $0, 9
     syscall
 
-    # Call the constructors.
+    # Call the constructors on Player
     addi $a0, $v0, 0
     addi $a1, $0, 100                       # Player(100, 0, 5)
     addi $a2, $0, 0                         # Player(100, 0, 5)
     addi $a3, $0, 5                         # Player(100, 0, 5)
     jal playerConstructor
 
-    # Call the testPlayer function with each pointer.
+    # Call the testPlayer function with Player
     addi $a0, $v0, 0                        # a0 = player
-    jal testPlayer                          
+    la $t0, PlayerVMT
+    sw $t0, 0($a0)                          # OH->PlayerVMT
+    jal testPlayer
+
+    # Allocate heap space for a Merchant
+    addi $a0, $0, 28                        # Allocate space for Merchant
+    addi $v0, $0, 9
+    syscall
+
+    # Call the constructors on Merchant
+    addi $a0, $v0, 0
+    addi $a1, $0, 100                       # Merchant(100, 0, 5)
+    addi $a2, $0, 0                         # Merchant(100, 0, 5)
+    addi $a3, $0, 5                         # Merchant(100, 0, 5)
+    jal playerConstructor
+
+    # Call the testPlayer function with Merchant
+    addi $a0, $v0, 0                        # a0 = merchant
+    la $t0, MerchantVMT                     # OH->MerchantVMT
+    sw $t0, 0($a0)
+    jal testPlayer                           
     
     addi $v0, $0, 0                         # return 0;
 end:
