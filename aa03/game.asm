@@ -132,7 +132,9 @@ testPlayer:                                 # Arg: a0 = playerAddress
     addi $a1, $v0, 0                        # a1 = item1
     lw $a0, 0($sp)                          # a0 = playerAddress
     sw $a0, 0($sp)                          # Store a0 on stack
-    jal playerPickUpItem                    # player->pickUpItem(item1)
+    lw $t0, 0($a0)
+    lw $t1, 12($t0)
+    jalr $t1                                # player->pickUpItem(item1)
 
     addi $a0, $0, 16                        
     addi $v0, $0, 9
@@ -147,14 +149,18 @@ testPlayer:                                 # Arg: a0 = playerAddress
     sw $v0, 8($sp)                          # Store item2 on stack
     lw $a0, 0($sp)                          # a0 = playerAddress
     sw $a0, 0($sp)                          # Store a0 on stack
-    jal playerPickUpItem                    # player->pickUpItem(item2)
+    lw $t0, 0($a0)
+    lw $t1, 12($t0)
+    jalr $t1                                # player->pickUpItem(item1)
 
     lw $a0, 0($sp)                          # Load player
     lw $t0, 24($a0)                         # t0 = player->inventory
     lw $t0, 0($t0)                          # t0 = player->inventory[0]
     sw $t0, 20($a0)                         # player->equipped_item = inventory[0]
 
-    jal playerAttack                        # Call playerAttack()
+    lw $t0, 0($a0)
+    lw $t1, 0($t0)
+    jalr $t1                                # Call player->attack()
     addi $a0, $v0, 0                        # a0 = int damage
     addi $v0, $0 , 1
     syscall                                 # cout damage
@@ -165,7 +171,9 @@ testPlayer:                                 # Arg: a0 = playerAddress
 
     lw $a0, 0($sp)                          # Load player
     addi $a1, $0, 10                        # damage = 10
-    jal playerTakeDamage                    # player->playerTakeDamage(10)
+    lw $t0, 0($a0)
+    lw $t1, 4($t0)
+    jalr $t1                                # Call player->takeDamage(10)
     lw $a0, 0($sp)                          
     lw $a0, 8($a0)                          # a0 = player->currentHp
     addi $v0, $0, 1
@@ -177,7 +185,9 @@ testPlayer:                                 # Arg: a0 = playerAddress
 
     lw $a0, 0($sp)                          # Load player
     lw $a1, 8($sp)                          # Load item2
-    jal playerSellItem                      # player->sellItem(item2)
+    lw $t0, 0($a0)
+    lw $t1, 8($t0)
+    jalr $t1                                # Call player->sellItem(item2)
     lw $a0, 0($sp)                          # Load player
     lw $a0, 12($a0)
     addi $v0, $0, 1
