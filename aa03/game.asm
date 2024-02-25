@@ -19,6 +19,8 @@ itemConstructor:                            # Args: address, gv, ab, armb
     jr $ra                                  # return
 
 playerConstructor:                          # Args: address, mh, g, s
+    la $t0, PlayerVMT
+    sw $t0, 0($a0)                          # OH->PlayerVMT
     sw $a1, 4($a0)                          # maxHp = mh
     sw $a1, 8($a0)                          # currentHp = mh
     sw $a2, 12($a0)                         # gold = g
@@ -42,16 +44,17 @@ playerConstructor:                          # Args: address, mh, g, s
 
     addi $t1, $0, 0                         # i = 0
     lw $t2, 24($a0)                         # t2 = *inventory
+
     populateInventory:
         bge $t1, $t0, donePopulateInventory # while i < 5
         sw $0, 0($t2)                       # &t2 = 0 (nullptr)
         addi $t2, $t2, 4                    # t2 += 4
         addi $t1, $t1, 1                    # t1 += 1
+        j populateInventory
 
     donePopulateInventory:
         addi $v0, $a0, 0
         jr $ra                              # return
-
 
 playerAttack:                               # Arg: a0 = playerAddress
     lw $t0, 16($a0)                         # t0 = player->strength
@@ -69,9 +72,47 @@ playerTakeDamage:                           # Arg: a0 = playerAddress, a1 =damag
         sw $t0, 12($a0)
         jr $ra                              # return
 
-playerSellItem:
+playerSellItem:                             # Args: a0 = playerAddress, a1 = *item
+    beq $a1, $0, donePlayerSellItem         # if item != nullptr
+    la $t0, PlayerInventorySize             # t0 = PlayerInventorySize
+    lw $t0, 0($t0)
+    addi $t1, $0, 0                         # i = 0
+    lw $t2, 24($a0)                         # t2 = *inventory
+    lw $t2, 0($t2)                          # t2 = inventory[0]
 
-playerPickUpItem:
+    playerSellItemLoop:
+        bge $t1, $t0, donePlayerSellItem    # while i < PlayerInventorySize
+        beq $t2, $a1, playerSellItemMatch   # if item != inventory[i]
+        addi $t2, $t2, 4
+        addi $t1, $t1, 1
+        j playerSellItemLoop
+
+    playerSellItemMatch:
+        lw $t0, 4($a1)                      # t0 = item->goldValue
+        lw $t1, 12($a0)                     # t1 = player->gold
+        add $t1, $t1, $t0                  
+        sw $t1, 12($a0)                     # player->gold += item->goldValue
+        sw $0, 0($a1)                       # inventory[i] = nullptr
+
+    donePlayerSellItem:
+        jr $ra
+
+playerPickUpItem:                           # Args: a0 = playerAddress, a1 = newItem
+    la $t0, PlayerInventorySize
+    lw $t0, 0($t0)                          # t0 = PlayerInventorySize
+    addi $t1, $0, 0                         # i = 0
+    lw $t2, 24($a0)                         # t2 = *inventory
+    lw $t2, 0($t2)                          # t2 = inventory[0]
+
+    playerPickUpItemLoop:
+        beq $t2, $0, playerPickUpItemSlot   # if t2 != nullptr
+        addi $t1, $t1, 1
+        addi $t2, $t2, 4
+        j playerPickUpItemLoop
+    
+    playerPickUpItemSlot:
+        sw $a1, 0($t2)                      # inventory[i] -> newItem
+        jr $ra
 
 testPlayer:
     # Implement your testPlayer function here.
@@ -88,7 +129,7 @@ main:
     addi $a3, $0, 5                         # Player(100, 0, 5)
     jal playerConstructor
 
-    lw $a0, 24($v0)                          # print test
+    lw $a0, 24($v0)                         # print test
     addi $v0, $0, 1
     syscall                                 # expect 0
 
