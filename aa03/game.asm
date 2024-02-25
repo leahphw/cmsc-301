@@ -11,16 +11,16 @@
 j main
 
 # Implement your classes here.
-itemConstructor:                            # Takes 4 args: address, gv, ab, armb
+itemConstructor:                            # Args: address, gv, ab, armb
     sw $a1, 4($a0)                          # goldValue = gv
     sw $a2, 8($a0)                          # attackBonus = ab
     sw $a3, 12($a0)                         # armorBonus = armb
     addi $v0, $a0, 0                        # return Item address
     jr $ra                                  # return
 
-playerConstructor:                          # Takes 4 args: address, mh, g, s
-    sw $a1, 4($a0)                          # max_hp = mh
-    sw $a1, 8($a0)                          # currect_hp = mh
+playerConstructor:                          # Args: address, mh, g, s
+    sw $a1, 4($a0)                          # maxHp = mh
+    sw $a1, 8($a0)                          # currentHp = mh
     sw $a2, 12($a0)                         # gold = g
     sw $a3, 16($a0)                         # strength = s
 
@@ -53,9 +53,21 @@ playerConstructor:                          # Takes 4 args: address, mh, g, s
         jr $ra                              # return
 
 
-playerAttack: 
+playerAttack:                               # Arg: a0 = playerAddress
+    lw $t0, 16($a0)                         # t0 = player->strength
+    addi $v0, $t0, 0                        # v0 = t0
+    jr $ra                                  # return
 
-playerTakeDamage: 
+playerTakeDamage:                           # Arg: a0 = playerAddress, a1 =damage
+    lw $t0, 12($a0)                         # t0 = currentHp
+    sub $t0, $t0, $a1                       # currentHp -= damage
+
+    bge $t0, $0, donePlayerTakeDamage       # if currentHp < 0
+    addi $t0, $0, 0
+
+    donePlayerTakeDamage:                   
+        sw $t0, 12($a0)
+        jr $ra                              # return
 
 playerSellItem:
 
