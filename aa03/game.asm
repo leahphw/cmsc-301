@@ -55,8 +55,7 @@ playerConstructor:                          # Args: address, mh, g, s
         jr $ra                              # return
 
 playerAttack:                               # Arg: a0 = playerAddress
-    lw $t0, 16($a0)                         # t0 = player->strength
-    addi $v0, $t0, 0                        # v0 = t0
+    lw $v0, 16($a0)                         # v0 = player->strength
     jr $ra                                  # return
 
 playerTakeDamage:                           # Arg: a0 = playerAddress, a1 = damage
@@ -162,6 +161,16 @@ merchantPickUpItem:
         jr $ra
 
 warriorAttack:
+    lw $t0, 20($a0)                         # t0 = warrior->equippedItem
+    beq $t0, $0, doneWarriorAttack          # if warrior->equippeditem != nullptr
+    lw $t1, 16($a0)                         # t1 = strength
+    lw $t0, 8($t0)                          # t0 = equippedItem->attackBonus
+    add $t1, $t1, $t0                       # strength = strength + attackBonus
+    sw $t1, 16($a0)
+
+    doneWarriorAttack:
+        lw $v0, 16($a0)
+        jr $ra                              # return warrior->strength
 
 knightTakeDamage:
 
@@ -274,6 +283,24 @@ main:
     la $t0, PlayerVMT
     sw $t0, 0($a0)                          # OH->PlayerVMT
     jal testPlayer
+
+    # Allocate heap space for a Warrior
+    addi $a0, $0, 28                        # Allocate space for Merchant
+    addi $v0, $0, 9
+    syscall
+
+    # Call the constructors on Warrior
+    addi $a0, $v0, 0
+    addi $a1, $0, 100                       # Warrior(100, 0, 5)
+    addi $a2, $0, 0                         # Warrior(100, 0, 5)
+    addi $a3, $0, 5                         # Warrior(100, 0, 5)
+    jal playerConstructor
+
+    # Call the testPlayer function with Warrior
+    addi $a0, $v0, 0                        # a0 = warrior
+    la $t0, WarriorVMT                     # OH->WarriorVMT
+    sw $t0, 0($a0)
+    jal testPlayer 
 
     # Allocate heap space for a Merchant
     addi $a0, $0, 28                        # Allocate space for Merchant
