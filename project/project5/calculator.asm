@@ -1,108 +1,211 @@
 .data
-newline: .asciiz "\n"
-prev_result: .word 0    # Storage for the previous result
+    __STATICMEMORYEND__:
 
 .text
 .globl main
 
 
 main:
-    la $t0, prev_result     # Load the address of prev_result
-    lw $s0, ($t0)           # Load the previous result into $s0
+    addi $s0, $0, 1
+    addi $s5, $0, 0
+    addi $t5, $0, 0
 
+    readIntLoop:
+        addi $s1, $0, 10        # s1 = 10
+        li $v0, 5               # Read integer syscall
+        syscall
+        addi $s2, $v0, 0        # s2 = int 0-9
 
-loop:
-    # Read the first term
-    li $v0, 5
+        slt $s3, $s2, $s1       # If 0-9
+        beq $s3, $0, reverse_loop    # Else, is a char
+
+        mult $s2, $s0           # s2 = s2 * s0 (1, 10, 100...)
+        mflo $s2
+
+        mult $s0, $s1           # s0 = (1, 10, 100...)
+        mflo $s0
+
+        add $s5, $s5, $s2       # s5 = s5 + s2
+        j readIntLoop
+
+    reverse_loop:
+        beq $s5, $zero, EndReadIntLoop    # If $s5 is 0, finish the loop
+        addi $s1, $0, 10        # s1 = 10
+        div $s5, $s1            # Divide $s5 by 10; quotient in $lo, remainder in $hi
+        mflo $s5                # Move quotient back to $s5 for next iteration
+        mfhi $t3                # Move remainder to $t3
+
+        mult $t5, $s1           # Multiply current reversed number by 10
+        mflo $t5
+        add $t5, $t5, $t3       # Add the last digit to the reversed number
+
+        j reverse_loop          # Jump back to the start of the loop
+
+    EndReadIntLoop:
+        add $s5, $t5, $0
+
+        # Check for arithmetic operators
+        li $s4, 95              # ASCII code for underscore _
+        beq $s6, $s4, previousAnswer
+        beq $s2, $s4, previousAnswer
+
+        li $s4, 43              # ASCII code for plus sign +
+        beq $s6, $s4, additionLoop
+        beq $s2, $s4, additionLoop
+
+        li $s4, 45              # ASCII code for minus sign -
+        beq $s6, $s4, subtractionLoop
+        beq $s2, $s4, subtractionLoop
+
+        li $s4, 42              # ASCII code for asterisk *
+        beq $s6, $s4, multiplicationLoop
+        beq $s2, $s4, multiplicationLoop
+
+        li $s4, 47              # ASCII code for slash /
+        beq $s6, $s4, divisionLoop
+        beq $s2, $s4, divisionLoop
+
+        j main
+
+previousAnswer:
+    li $t6, 43             # ASCII code for plus sign +
+    beq $s6, $t6, afterAdditionCheck
+    beq $s2, $t6, afterAdditionCheck
+
+    li $t6, 45             # ASCII code for minus sign -
+    beq $s6, $t6, afterSubtractionCheck
+    beq $s2, $t6, afterSubtractionCheck
+
+    li $t6, 42             # ASCII code for asterisk *
+    beq $s6, $t6, afterMultiplicationCheck
+    beq $s2, $t6, afterMultiplicationCheck
+
+    li $t6, 47             # ASCII code for slash /
+    beq $s6, $t6, afterDivisionCheck
+    beq $s2, $t6, afterDivisionCheck
+
+    j main
+
+additionLoop:
+    addi $s7, $s5, 0
+    jal Read2ndInt
+    addi $s8, $t5, 0
+    add $t7, $s8, $s7       # t7 holds original value
+    add $a0, $s8, $s7
+    li $v0, 1               # Print integer syscall
     syscall
-    move $t0, $v0  # Store the first term in $t0
+    j main
 
-    # Check if the first term is the special character '_'
-    beq $t0, $s0, read_operator  # If it is then skip reading the first term
-
-    move $s0, $t0               # Store the first term in $s0
-
-
-read_operator:
-    # Read the operator
-    li $v0, 12
+afterAdditionCheck:
+    jal Read2ndInt
+    addi $s8, $t5, 0
+    add $a0, $t7, $s8
+    li $v0, 1               # Print integer syscall
     syscall
-    move $t1, $v0       # Store the operator in $t1
+    add $t7, $t7, $s8       # t7 holds original value
+    j main
 
-    # Read the second term
-    li $v0, 5
+subtractionLoop:
+    addi $s7, $s5, 0
+    jal Read2ndInt
+    addi $s8, $t5, 0
+    sub $t7, $s7, $s8       # t7 holds original value
+    sub $a0, $s7, $s8
+    li $v0, 1               # Print integer syscall
     syscall
-    move $t2, $v0       # Store the second term in $t2
+    j main
 
-    # Call the calculator function
-    move $a0, $s0
-    move $a1, $t2
-    move $a2, $t1
-    jal calculator
-
-    # Store the result for the next calculation
-    la $t0, prev_result
-    sw $v0, ($t0)
-
-    # Print the result
-    move $a0, $v0
-    li $v0, 1
+afterSubtractionCheck:
+    jal Read2ndInt
+    addi $s8, $t5, 0
+    sub $a0, $t7, $s8
+    li $v0, 1               # Print integer syscall
     syscall
+    sub $t7, $t7, $s8       # t7 holds original value
+    j main
 
-    li $v0, 4
-    la $a0, newline
+multiplicationLoop:
+    addi $s7, $s5, 0
+    jal Read2ndInt
+    addi $s8, $t5, 0
+    mult $s7, $s8
+    mflo $t7                # t7 holds original value
+    add $a0, $0, $t7
+    li $v0, 1               # Print integer syscall
     syscall
+    j main
 
-    j loop      # Loop back for the next expression
+afterMultiplicationCheck:
+    jal Read2ndInt
+    addi $s8, $t5, 0
+
+    mult $t7, $s8
+    mflo $a0
+    li $v0, 1               # Print integer syscall
+    syscall
+    add $t7, $0, $a0        # t7 holds original value
+    j main
+
+divisionLoop:
+    addi $s7, $s5, 0
+    jal Read2ndInt
+    addi $s8, $t5, 0
+    div $s7, $s8
+    mflo $t7                # t7 holds original value
+    add $a0, $0, $t7
+    li $v0, 1               # Print integer syscall
+    syscall
+    j main
+
+afterDivisionCheck:
+    jal Read2ndInt
+    addi $s8, $t5, 0
+
+    div $t7, $s8
+    mflo $a0    
+    addi $v0, $0, 1
+    syscall
+    add $t7, $0, $a0    #t7 holds original value
+    j main
 
 
-calculator:
-    addi $sp, $sp, -20      # Stack allocation
-    sw $ra, 0($sp)
-    sw $s0, 4($sp)          # First num
-    sw $s1, 8($sp)          # Second num
-    sw $s2, 12($sp)         # Sign
-    sw $a0, 16($sp)         # Old num
+Read2ndInt:
+    addi $s0, $0, 1        # s0 for 10 * 10 * 10...
+    addi $s5, $0, 0
+    addi $t5, $0, 0
 
-    move $s0, $a0   # First num parameter
-    move $s1, $a1   # Second num parameter
-    move $s2, $a2   # Sign
+    read2ndIntLoop:
+        addi $s1, $0, 10        # s1 = 10
 
-    jal arithmetics
+        li $v0, 5               # Read integer syscall
+        syscall
+        addi $s2, $v0, 0        # s2 = int 0-9
 
-    lw $ra, 0($sp)
-    lw $s0, 4($sp)      # First num
-    lw $s1, 8($sp)      # Second num
-    lw $s2, 12($sp)
-    lw $a0, 16($sp)     # Old num
-    addi $sp, $sp, 20   # Stack deallocation
-    jr $ra
+        slt $s3, $s2, $s1       # If 0-9
+        beq $s3, $0, reverse2nd_loop    # Else, is a char
 
+        mult $s2, $s0           # s2 = s2 * s0 (1, 10, 100...)
+        mflo $s2
 
-arithmetics:
-    li $t0, 43
-    beq $s2, $t0, adder
-    li $t0, 45
-    beq $s2, $t0, subtract
-    li $t0, 42
-    beq $s2, $t0, multiply
-    li $t0, 47
-    beq $s2, $t0, divide
+        mult $s0, $s1           # s0 = (1, 10, 100...)
+        mflo $s0
 
-adder:
-    add $v0, $s0, $s1
-    jr $ra
+        add $s5, $s5, $s2       # s5 = s5 + s2
+        j read2ndIntLoop
 
-subtract:
-    sub $v0, $s0, $s1
-    jr $ra
+    reverse2nd_loop:
+        beq $s5, $zero, EndRead2ndIntLoop    # If $s5 is 0, finish the loop
+        addi $s1, $0, 10        # s1 = 10
+        div $s5, $s1            # Divide $s5 by 10; quotient in $lo, remainder in $hi
+        mflo $s5                # Move quotient back to $s5 for next iteration
+        mfhi $t3                # Move remainder to $t3
 
-multiply:
-    mult $s0, $s1
-    mflo $v0
-    jr $ra
+        mult $t5, $s1           # Multiply current reversed number by 10
+        mflo $t5
+        add $t5, $t5, $t3       # Add the last digit to the reversed number
 
-divide:
-    div $s0, $s1
-    mflo $v0
-    jr $ra
+        j reverse2nd_loop          # Jump back to the start of the loop
+
+    EndRead2ndIntLoop:
+        add $s6, $s2, $0
+        jr $ra                  # Return to the caller
