@@ -84,4 +84,5 @@ printCharArray:
         jr $ra
 
 end:
-    j end
+    addi $v0, $0, 10
+    syscall
