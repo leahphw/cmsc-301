@@ -304,15 +304,23 @@ end TCL_Generic;&#13;
       <a name="addrWidth" val="16"/>
       <a name="appearance" val="logisim_evolution"/>
       <a name="contents">addr/data: 16 32
-201df000 23bdffd0 200800ff 84a00 85400 200b007f b6200 b6c00
-afaa0000 14cc020 afb80004 149c020 afb80008 1a9c020 afb8000c afa90010
-169c020 afb80014 109c020 afb80018 10cc020 afb8001c afa80020 10dc020
-afb80024 10ac020 afb80028 16ac020 afb8002c 20100000 20110000 20120000
-8c08ff10 11000017 8c08ff14 20090077 15090003 12200012 2231ffff 8000038
-20090061 15090003 1200000d 2210ffff 8000038 20090073 15090004 200a00ff
-122a0007 22310001 8000038 20090064 15090003 200a00ff 120a0001 22100001
-ac00ff10 22520001 2008000c 248001a 9010 124080 11d4020 8d080000
-ac10ff20 ac11ff24 ac08ff28 ac00ff2c 8000020
+23bdffd0 200800ff 84a00 85400 200b007f b6200 b6c00 afaa0000
+14cc020 afb80004 149c020 afb80008 1a9c020 afb8000c afa90010 169c020
+afb80014 109c020 afb80018 10cc020 afb8001c afa80020 10dc020 afb80024
+10ac020 afb80028 16ac020 afb8002c 20100080 2011007e 20120040 2013003f
+20140001 20150000 2110018 4012 84080 82020 20020009 d00c
+40b020 20170000 20180061 8c08ff10 11000004 2002000c d00c 407820
+ac00ff10 20090061 15e90004 12400015 2014ffff 20150000 8000049 20090064
+15e90004 1250000f 20140001 20150000 8000049 20090073 15e90004 12710009
+20140000 20150001 8000049 20090077 15e90004 12600003 20140000 2015ffff
+8000049 2549020 2759820 2700018 4012 1124020 84080 1164020
+8d090000 200a0001 112a0015 ad0a0000 240402a 15000012 212402a 15000010
+260402a 1500000e 233402a 1500000c 22f70001 2009000c 2e9001a b810
+174880 13d4820 8d290000 ac12ff20 ac13ff24 ac09ff28 ac00ff2c 800002b
+2002000b 20040059 d00c 2004004f d00c 20040055 d00c 20040020
+d00c 2004004c d00c 2004004f d00c 20040053 d00c 20040045
+d00c 20040020 d00c 2004003c d00c 20040033 d00c 2002000a
+d00c
 </a>
       <a name="dataWidth" val="32"/>
     </comp>
@@ -320,67 +328,67 @@ ac10ff20 ac11ff24 ac08ff28 ac00ff2c 8000020
       <a name="appearance" val="logisim_evolution"/>
       <a name="width" val="32"/>
     </comp>
-    <comp lib="8" loc="(1442,332)" name="Text">
+    <comp lib="8" loc="(1440,330)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="jr/jalr"/>
     </comp>
-    <comp lib="8" loc="(157,1296)" name="Text">
+    <comp lib="8" loc="(155,1295)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="offset"/>
     </comp>
-    <comp lib="8" loc="(1822,398)" name="Text">
+    <comp lib="8" loc="(1820,395)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="j-type"/>
     </comp>
-    <comp lib="8" loc="(1841,247)" name="Text">
+    <comp lib="8" loc="(1840,245)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="branch"/>
     </comp>
-    <comp lib="8" loc="(1966,1429)" name="Text">
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="text" val="immSel"/>
-    </comp>
-    <comp lib="8" loc="(197,609)" name="Text">
+    <comp lib="8" loc="(195,605)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="pc+4"/>
     </comp>
-    <comp lib="8" loc="(2098,292)" name="Text">
+    <comp lib="8" loc="(1965,1425)" name="Text">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="text" val="immSel"/>
+    </comp>
+    <comp lib="8" loc="(2095,290)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="beq"/>
     </comp>
-    <comp lib="8" loc="(2103,192)" name="Text">
+    <comp lib="8" loc="(2100,190)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="bne"/>
     </comp>
-    <comp lib="8" loc="(2106,1343)" name="Text">
+    <comp lib="8" loc="(2105,1340)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="shiftSel"/>
     </comp>
-    <comp lib="8" loc="(2263,776)" name="Text">
+    <comp lib="8" loc="(2260,775)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="jalr/jal"/>
     </comp>
-    <comp lib="8" loc="(255,741)" name="Text">
+    <comp lib="8" loc="(255,740)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="offset"/>
     </comp>
-    <comp lib="8" loc="(448,1383)" name="Text">
+    <comp lib="8" loc="(445,1380)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="rd_data"/>
     </comp>
-    <comp lib="8" loc="(588,626)" name="Text">
+    <comp lib="8" loc="(585,625)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="branchSelect"/>
     </comp>
-    <comp lib="8" loc="(614,273)" name="Text">
+    <comp lib="8" loc="(610,270)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="branchSelect"/>
     </comp>
-    <comp lib="8" loc="(693,425)" name="Text">
+    <comp lib="8" loc="(690,425)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="jSelect"/>
     </comp>
-    <comp lib="8" loc="(744,612)" name="Text">
+    <comp lib="8" loc="(740,610)" name="Text">
       <a name="text" val="ProgramCounter"/>
     </comp>
     <comp loc="(1760,1320)" name="regfile"/>
@@ -1405,31 +1413,31 @@ ac10ff20 ac11ff24 ac08ff28 ac00ff2c 8000020
       <a name="label" val="HI"/>
       <a name="width" val="32"/>
     </comp>
-    <comp lib="8" loc="(1008,517)" name="Text">
+    <comp lib="8" loc="(1005,515)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="sub"/>
     </comp>
-    <comp lib="8" loc="(1041,1113)" name="Text">
+    <comp lib="8" loc="(1040,1110)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="srl"/>
     </comp>
-    <comp lib="8" loc="(1044,989)" name="Text">
+    <comp lib="8" loc="(1040,985)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="sll"/>
     </comp>
-    <comp lib="8" loc="(1077,600)" name="Text">
+    <comp lib="8" loc="(1075,600)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="div"/>
     </comp>
-    <comp lib="8" loc="(1077,709)" name="Text">
+    <comp lib="8" loc="(1075,705)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="mult"/>
     </comp>
-    <comp lib="8" loc="(942,1189)" name="Text">
+    <comp lib="8" loc="(940,1185)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="op2 only"/>
     </comp>
-    <comp lib="8" loc="(997,430)" name="Text">
+    <comp lib="8" loc="(995,430)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="add"/>
     </comp>
@@ -2067,51 +2075,51 @@ ac10ff20 ac11ff24 ac08ff28 ac00ff2c 8000020
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="addi"/>
     </comp>
-    <comp lib="8" loc="(543,1045)" name="Text">
+    <comp lib="8" loc="(540,1045)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="div"/>
     </comp>
-    <comp lib="8" loc="(545,1177)" name="Text">
+    <comp lib="8" loc="(545,1115)" name="Text">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="text" val="add"/>
+    </comp>
+    <comp lib="8" loc="(545,1175)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="sub"/>
     </comp>
-    <comp lib="8" loc="(545,436)" name="Text">
+    <comp lib="8" loc="(545,435)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="jr"/>
+    </comp>
+    <comp lib="8" loc="(545,500)" name="Text">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="text" val="jalr"/>
+    </comp>
+    <comp lib="8" loc="(545,590)" name="Text">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="text" val="slt"/>
+    </comp>
+    <comp lib="8" loc="(545,665)" name="Text">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="text" val="mflo"/>
+    </comp>
+    <comp lib="8" loc="(545,745)" name="Text">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="text" val="mfhi"/>
+    </comp>
+    <comp lib="8" loc="(545,825)" name="Text">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="text" val="sll"/>
+    </comp>
+    <comp lib="8" loc="(545,885)" name="Text">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="text" val="srl"/>
     </comp>
     <comp lib="8" loc="(545,945)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="mult"/>
     </comp>
-    <comp lib="8" loc="(546,1116)" name="Text">
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="text" val="add"/>
-    </comp>
-    <comp lib="8" loc="(546,886)" name="Text">
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="text" val="srl"/>
-    </comp>
-    <comp lib="8" loc="(547,594)" name="Text">
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="text" val="slt"/>
-    </comp>
-    <comp lib="8" loc="(547,826)" name="Text">
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="text" val="sll"/>
-    </comp>
-    <comp lib="8" loc="(548,504)" name="Text">
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="text" val="jalr"/>
-    </comp>
-    <comp lib="8" loc="(548,665)" name="Text">
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="text" val="mflo"/>
-    </comp>
-    <comp lib="8" loc="(549,745)" name="Text">
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="text" val="mfhi"/>
-    </comp>
-    <comp lib="8" loc="(558,374)" name="Text">
+    <comp lib="8" loc="(555,370)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="syscall"/>
     </comp>
@@ -3132,7 +3140,7 @@ ac10ff20 ac11ff24 ac08ff28 ac00ff2c 8000020
     <a name="appearance" val="logisim_evolution"/>
     <a name="circuit" val="Computer"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
-    <a name="simulationFrequency" val="64.0"/>
+    <a name="simulationFrequency" val="4.0"/>
     <comp lib="0" loc="(1010,220)" name="Probe">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -3195,15 +3203,15 @@ ac10ff20 ac11ff24 ac08ff28 ac00ff2c 8000020
       <a name="width" val="256"/>
     </comp>
     <comp lib="5" loc="(730,800)" name="Keyboard"/>
-    <comp lib="8" loc="(926,225)" name="Text">
+    <comp lib="8" loc="(925,225)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="Address"/>
     </comp>
-    <comp lib="8" loc="(929,266)" name="Text">
+    <comp lib="8" loc="(925,265)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="Data"/>
     </comp>
-    <comp lib="8" loc="(933,189)" name="Text">
+    <comp lib="8" loc="(930,185)" name="Text">
       <a name="font" val="SansSerif plain 12"/>
       <a name="text" val="Write_enable"/>
     </comp>
