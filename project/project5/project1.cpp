@@ -8,324 +8,430 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-
 using namespace std;
 
-int main(int argc, char *argv[])
-{
-    if (argc < 4) // Checks that at least 3 arginstpents are given in command line
+
+int main(int argc, char* argv[]) {
+    if (argc < 4) // Checks that at least 3 arguments are given in command line
     {
-        std::cerr << "Expected Usage:\n ./assemble infile1.asm infile2.asm ... infilek.asm staticmem_outfile.bin instructions_outfile.bin\n"
-                  << std::endl;
+        std::cerr << "Expected Usage:\n ./assemble infile1.asm infile2.asm ... infilek.asm staticmem_outfile.bin instructions_outfile.bin\n" << std::endl;
         exit(1);
     }
-    // Prepare output files
-    std::ofstream instruction_out, static_out;
-
-    // Map for label names
-    std::unordered_map<std::string, int> labels = {};
-    // Map for static label names
-    std::unordered_map<int, std::string> static_labels = {};
-    // Vector storing all instructions
-    std::vector<std::string> instructions = {};
-    // Count tracker variable
-    int count = 0;
-    std::vector<int> static_memory = {};
-    std::vector<std::string> static_lines = {};
+    //Prepare output files
+    std::ofstream inst_outfile, static_outfile;
+    static_outfile.open(argv[argc - 2], std::ios::binary);
+    inst_outfile.open(argv[argc - 1], std::ios::binary);
+    std::vector<std::string> instructions;
 
     /**
      * Phase 1:
-     * Rstead all instructions, clean them of comments and whitespace DONE
-     * TODO: Determine the ninstpbers for all static memory labels
+     * Read all instructions, clean them of comments and whitespace DONE
+     * TODO: Determine the numbers for all static memory labels
      * (measured in bytes starting at 0)
-     * TODO: Determine the line ninstpbers of all instruction line labels
+     * TODO: Determine the line numbers of all instruction line labels
      * (measured in instructions) starting at 0
-     */
+    */
+    // After the "Phase 1:" comment and before the for loop:
+    std::unordered_map<std::string, int> static_mem_labels; // Stores the byte offset for static memory labels
+    std::unordered_map<std::string, int> instruction_labels;     // Stores the instruction number for instruction labels
+    std::vector<std::vector<std::string>> static_info;
 
-    // Boolean trackers to add static member
-    int start_static_label = -1;
-    int end_static_label = 0;
-    int semicolon = -1;
-    // For each input file:
-    for (int i = 1; i < argc - 2; i++)
-    {
-        std::ifstream infile(argv[i]); // Open the input file for reading
-        if (!infile)
-        { // If file can't be opened, need to let the user know
-            std::cerr << "Error: could not open file: " << argv[i] << std::endl;
-            exit(1);
-        }
+   // Number of processed instructions
+int instructionCounter = 0; 
+// Byte offset for the static memory
+int staticOffset = 0; 
 
-        std::string str;
-        while (getline(infile, str))
-        {                     // Read a line from the file
-            str = clean(str); // Remove comments and whitespace
-            start_static_label = str.find(".word");
-            semicolon = str.find(":");
-            if (str == "")
-            { // Ignore empty lines
-                continue;
-            }
-            else if (str == ".text" || str == ".data" || str == ".globl main" || str == ".align 2")
-            {
-                continue;
-            }
-            else if (start_static_label < str.length())
-            {
-                static_lines.push_back(str);
-            }
-            else if (semicolon < str.length())
-            {
-                if (end_static_label == 0)
-                {
-                    end_static_label = 1;
-                    std::string end_static_str = "end";
-                    labels[end_static_str] = count;
-                }
-                std::string s = str.substr(0, semicolon);
-                labels[s] = count;
-            }
-            else
-            {
-                if (end_static_label == 0)
-                {
-                    end_static_label = 1;
-                    std::string end_static_str = "end";
-                    labels[end_static_str] = count;
-                }
-                instructions.push_back(str);
-                count++;
-            }
-        }
+// For each provided assembly file:
+for (int i = 1; i < argc - 2; i++) {
+    ifstream asmFile(argv[i]); 
+    if (!asmFile) {
+        cerr << "Error: Unable to open file: " << argv[i] << endl;
+        exit(1);
     }
 
-    /** Phase 2
-     * Process all static memory, output to static memory file
-     * TODO: All of this
-     */
+    string currentLine;
+    while (getline(asmFile, currentLine)) {
+        currentLine = clean(currentLine);
+        if (currentLine.empty()) {
+            continue;
+        }
 
-    static_out.open(argv[argc - 2], std::ios::binary);  
-    int bytes_count = 0;
-    for (std::string a : static_lines)
-    {
-        std::vector<std::string> temp = split(a, WHITESPACE);
-        static_labels[bytes_count * 4] = temp[0];
-        for (int k = 2; k < temp.size(); k++)
-        {
-            bool find = false;
-            // Load a * 4
-            for (auto x : labels)
-            {
-                if (x.first == temp[k])
-                {
-                    static_memory.push_back((x.second) * 4);
-                    find = true;
-                    break;
+        // Processing static memory segment
+        if (currentLine == ".data") {
+            string staticLine;
+
+            // Iterate over each line in the static memory segment
+            while (getline(asmFile, staticLine)) {
+                staticLine = clean(staticLine);
+                if (staticLine.empty()) {
+                    continue;
                 }
-            }
-            if (!find)
-            {
-                static_memory.push_back(std::stoi(temp[k]));
-            }
-            bytes_count++;
-        }
-    }
-    for (int a : static_memory)
-    {
-        int len_0 = 32 - to_string(a).length();
-        int result = a;
-        for (int i = len_0; i < 32; i++)
-        {
-            result += (0 << i);
-        }
-        write_binary(result, static_out);
-    }
+                if (staticLine == ".text") {
+                    break; // End of the static memory segment
+                }
+                
+                vector<string> staticComponents = split(staticLine, WHITESPACE + ":");
+                static_info.push_back(staticComponents);
 
+                // Label-to-offset mapping for static memory
+                static_mem_labels[staticComponents[0]] = staticOffset;
+                // Assuming 4 bytes for each .word directive
+                staticOffset += (staticComponents.size() - 2) * 4; 
+            }
+            continue;
+        }
+
+        // Ignoring other directives
+        if (currentLine[0] == '.') { 
+            continue;
+        }
+
+        // Processing labels within the code
+        // if (currentLine.find(":") != string::npos) { 
+        //     string label = currentLine.substr(0, currentLine.size() - 1);
+        //     instruction_labels[label] = instructionCounter;
+        //     continue;
+        // }
+
+        if (currentLine.back() == ':') {
+            string label = currentLine.substr(0, currentLine.size()-1);
+            instruction_labels[label] = instructionCounter;
+            continue;
+}
+
+
+        // Store the instruction for further processing
+        instructions.push_back(currentLine);
+        instructionCounter++;
+    }
+    asmFile.close();
+}
+ 
+// Convert static memory directives to binary format
+for (const vector<string>& staticEntry : static_info) {
+    for (int i = 2; i < staticEntry.size(); i++) {
+        // If the static memory directive references a label, retrieve the label's address
+        if (instruction_labels.find(staticEntry[i]) != instruction_labels.end()) {
+            int address = instruction_labels[staticEntry[i]] * 4;
+            write_binary(address, static_outfile);
+        } 
+        // //If the static memory references a string, store the string values
+        // else if(staticEntry[i] == ".asciiz"){
+        // }
+        else {
+            // Directly write the numeric value to the binary file
+            write_binary(stoi(staticEntry[i]), static_outfile);
+        }
+    }
+}
+
+    //InstructionCounter != Line#
     /** Phase 3
      * Process all instructions, output to instruction memory file
      * TODO: Almost all of this, it only works for adds
      */
+    int line_number = 0; //Track what line each command is on
+    for(std::string inst : instructions) {
+        std::vector<std::string> terms = split(inst, WHITESPACE+",()");
+        std::string inst_type = terms[0];
+        //used built in stoi() to translate strings from the files into integer inputs
+        if (inst_type == "add") {
+            write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[3]], registers[terms[1]], 0, 32),inst_outfile);
+        }
+        else if (inst_type == "sll"){
+            write_binary(encode_Rtype(0, 0 , registers[terms[2]], registers[terms[1]], stoi(terms[3]), 0), inst_outfile);
+        }
+        else if (inst_type == "srl"){
+            write_binary(encode_Rtype(0, 0 , registers[terms[2]], registers[terms[1]], stoi(terms[3]), 2), inst_outfile);
+        }
+        else if (inst_type == "mult"){
+            write_binary(encode_Rtype(0, registers[terms[1]], registers[terms[2]], 0, 0, 24), inst_outfile);
+        }
+        else if (inst_type == "mflo"){
+            write_binary(encode_Rtype(0, 0, 0, registers[terms[1]],0, 18), inst_outfile);
+        }
+        else if(inst_type == "mfhi"){
+            write_binary(encode_Rtype(0, 0, 0,registers[terms[1]],0, 16), inst_outfile);
+        }
+        else if(inst_type == "div"){
+            write_binary(encode_Rtype(0, registers[terms[1]], registers[terms[2]], 0, 0, 26), inst_outfile);
+        }
+        else if(inst_type == "slt"){
+            write_binary(encode_Rtype(0, registers[terms[2]],registers[terms[3]],registers[terms[1]],0,42), inst_outfile);
+        }
+        else if (inst_type == "addi"){
+            int16_t immediate = static_cast<int16_t>(stoi(terms[3]));
+            write_binary(encode_Itype(8, registers[terms[2]], registers[terms[1]], static_cast<uint16_t>(immediate)), inst_outfile);
+        }
+        // else if (inst_type == "addi"){
+        //     if (stoi(terms[3]) >= 0){//check if immediate is positive or negative
+        //     write_binary(encode_Itype(8, registers[terms[2]],registers[terms[1]], stoi(terms[3])), inst_outfile);
+        //     }
+        //     else{ //flip to compliment if negative
+        //     write_binary(encode_Itype(8, registers[terms[2]],registers[terms[1]], stoi(terms[3]) + 65536), inst_outfile);
+        //     }
+        // }
+        else if(inst_type == "sub"){
+            write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[3]], registers[terms[1]], 0, 34), inst_outfile);
+        }
+        else if(inst_type == "beq"){
+            int line_offset = instruction_labels[terms[3]] - line_number - 1;
+            int16_t offset = static_cast<int16_t>(line_offset);
+            write_binary(encode_Itype(4, registers[terms[1]], registers[terms[2]], static_cast<uint16_t>(offset)), inst_outfile);
+        }
+        
+        else if(inst_type == "bne"){
+            int line_offset = instruction_labels[terms[3]] - line_number - 1;
+            int16_t offset = static_cast<int16_t>(line_offset);
+            write_binary(encode_Itype(5, registers[terms[1]], registers[terms[2]], static_cast<uint16_t>(offset)), inst_outfile);
+        }
+        // else if(inst_type == "bne"){
+        //     int line_offset = (instruction_labels[terms[3]] - line_counter);
+        //     if (line_offset < 0) { //flip offset to compliment if negative
+        //         write_binary(encode_Itype(5, registers[terms[1]], registers[terms[2]], line_offset + 65536 - 1), inst_outfile);
+        //     }
+        //     else {
+        //         write_binary(encode_Itype(5, registers[terms[1]], registers[terms[2]], line_offset - 1), inst_outfile);
+        //     }
+        // }
+        else if(inst_type =="lw"){
+            int16_t immediate = static_cast<int16_t>(stoi(terms[2]));
+            write_binary(encode_Itype(35, registers[terms[3]], registers[terms[1]], static_cast<uint16_t>(immediate)), inst_outfile);
+        }
+        else if(inst_type == "sw"){
+            int16_t immediate = static_cast<int16_t>(stoi(terms[2]));
+            write_binary(encode_Itype(43, registers[terms[3]], registers[terms[1]], static_cast<uint16_t>(immediate)), inst_outfile);
+        }
+        else if(inst_type == "j"){
+            write_binary(encode_Jtype(2, instruction_labels[terms[1]]), inst_outfile);
+        }
+        else if(inst_type == "jal"){
+            write_binary(encode_Jtype(3, instruction_labels[terms[1]]), inst_outfile);
+        }
+        else if(inst_type == "jr"){
+            write_binary(encode_Rtype(0, registers[terms[1]], 0, 0, 0, 8), inst_outfile);
+        }
+        else if(inst_type == "jalr"){
+             write_binary(encode_Rtype(0, registers[terms[1]], 0, 31, 0, 9), inst_outfile);
+         }
+        else if(inst_type == "syscall")
+        {
+            write_binary(encode_Rtype(0, 0, 0, 26, 0, 12), inst_outfile);
+        }
+        else if (inst_type == "la") {
+            int static_address = static_mem_labels[terms[2]]; //load the static memory location of inserted variable 
+            write_binary(encode_Itype(8, 0, registers[terms[1]], static_address), inst_outfile);
+        }
+        else if ((inst_type == "move") || (inst_type == "mov")) {
+            int sourceRegister = registers[terms[2]];
+            int destinationRegister = registers[terms[1]];
+            write_binary(encode_Rtype(0, 0, sourceRegister, destinationRegister, 0, 32), inst_outfile);
+        }
+        // li $s0, 12 # loads integer into register
+        // same as addi
+        else if (inst_type == "li") {
+        int destinationRegister = registers[terms[1]];
+        int immediateValue = stoi(terms[2]);  // Convert the immediate value from string to integer
+        write_binary(encode_Itype(8, 0, destinationRegister, immediateValue), inst_outfile);
+        }
+        // sge rd, rs, rt # $rd is 1 if s1 >= s2, else rd is 0
+        // slt rd, rs, rt
+        // xori rd, rd, 1 
+        else if (inst_type == "sge") {
+        // sge rd, rs, rt sets rd = 1 if rs >= rt, else rd = 0
+        // Implemented using slt and xori instructions
+        write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[3]], registers[terms[1]], 0, 42), inst_outfile);
+        write_binary(encode_Itype(14, registers[terms[1]], registers[terms[1]], 1), inst_outfile);
+        // Update the line numbers for labels due to insertion of multiple instructions
+        for (auto& label : instruction_labels) {
+            if(label.second > line_number) {
+                label.second += 1;
+            }
+        }
+            line_number++;  // Increment line number as two instructions are added
+        }
+        // sgt $s0, $s1, $s2 # $s0 is 1 if s1 > s2, else s0 is 0 s1 <= s2
+        else if (inst_type == "sgt") {
+        // sgt rd, rs, rt sets rd = 1 if rs > rt, else rd = 0
+        // Implemented using slt by swapping rs and rt
+        write_binary(encode_Rtype(0, registers[terms[3]], registers[terms[2]], registers[terms[1]], 0, 42), inst_outfile);
+        }
+        
+        // sle rd, rs, rt   # rd = 1 (rs <= rt), rd = 0 (rs > rt)
+        // slt rd, rt, rs   
+        // xori rd, rd, 1
+        else if (inst_type == "sle") {
+        // sle rd, rs, rt sets rd = 1 if rs <= rt, else rd = 0
+        // Implemented using slt and xori
+        // First, slt is used to set rd if rs > rt
+        write_binary(encode_Rtype(0, registers[terms[3]], registers[terms[2]], registers[terms[1]], 0, 42), inst_outfile);
+        // Then, xori is used to invert the result, effectively implementing <=
+        write_binary(encode_Itype(14, registers[terms[1]], registers[terms[1]], 1), inst_outfile);
 
-    instruction_out.open(argv[argc - 1], std::ios::binary);
-    int curr_line = 0;
+        // Update the line numbers for labels due to insertion of multiple instructions
+        for (auto& label : instruction_labels) {
+            if(label.second > line_number) {
+                label.second += 1;
+            }
+        }
+            line_number += 1;  // Increment line number as two instructions are added
+        }
 
-    for (std::string inst : instructions)
-    {
-        int space = inst.find(" ");
-        std::string inst_type = inst.substr(0, space);
-        std::string inst_type1 = inst.substr(space + 1);
-        int space1 = inst_type1.find(" ");
+        else if (inst_type == "seq") {
+        // seq rd, rs, rt sets rd = 1 if rs == rt, else rd = 0
+        // Implemented using two slt instructions and a nor instruction
+        //slt rd, rs, rt sets rd if rs < rt
+        write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[3]], registers[terms[1]], 0, 42), inst_outfile);
+        //slt at, rt, rs sets at if rt < rs (using at as a temporary register)
+        write_binary(encode_Rtype(0, registers[terms[3]], registers[terms[2]], 1, 0, 42), inst_outfile);
+        // nor rd, rd, at sets rd = 1 if both rs >= rt and rt >= rs, i.e., rs == rt
+        write_binary(encode_Rtype(0, registers[terms[1]], 1, registers[terms[1]], 0, 39), inst_outfile);
 
-        if (inst_type == "add" || inst_type == "slt" || inst_type == "sub" || inst_type == "mult" || inst_type == "div" || inst_type == "mflo" || inst_type == "mfhi" || inst_type == "jr")
-        {
-            write_binary(encode_R(inst.substr(space + 1), inst_type), instruction_out);
+        // Update the line numbers for labels due to insertion of three instructions
+        for (auto& label : instruction_labels) {
+            if(label.second > line_number) {
+                label.second += 2; // Increment by 2 for each additional instruction
+            }
         }
-        else if (inst_type == "addi" || inst_type == "sll" || inst_type == "srl")
-        {
-            write_binary(encode_Ri(inst.substr(space + 1), inst_type), instruction_out);
+        line_number += 2;  // Increment line number by 2 as three instructions are added
         }
-        else if (inst_type == "lw" || inst_type == "sw")
-        {
-            write_binary(encode_lw(inst.substr(space + 1), inst_type), instruction_out);
+
+        else if (inst_type == "sne") {
+        // sne rd, rs, rt sets rd = 1 if rs != rt, else rd = 0
+        // Implemented using two slt instructions and a xor instruction
+        // First, slt rd, rs, rt sets rd if rs < rt
+        write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[3]], registers[terms[1]], 0, 42), inst_outfile);
+        // Second, slt at, rt, rs sets at if rt < rs (using at as a temporary register)
+        write_binary(encode_Rtype(0, registers[terms[3]], registers[terms[2]], 1, 0, 42), inst_outfile);
+        // Finally, xor rd, rd, at sets rd = 1 if rs != rt
+        write_binary(encode_Rtype(0, registers[terms[1]], 1, registers[terms[1]], 0, 38), inst_outfile);
+        // Update the line numbers for labels due to insertion of three instructions
+        for (auto& label : instruction_labels) {
+            if(label.second > line_number) {
+                label.second += 2; // Increment by 2 for each additional instruction
+            }
         }
-        else if (inst_type == "beq" || inst_type == "bne")
-        {
-            write_binary(encode_branch(inst.substr(space + 1), inst_type, labels, curr_line), instruction_out);
+        line_number += 2;
         }
-        else if (inst_type == "j" || inst_type == "jal")
-        {
-            write_binary(encode_j(inst.substr(space + 1), inst_type, labels), instruction_out);
+        // Handling of bge pseudoinstruction
+        else if (inst_type == "bge") {
+            // bge rs, rt, label
+            // Update line numbers for labels before calculating the offset
+            for (auto& label : instruction_labels) {
+                if(label.second > line_number) {
+                    label.second += 2;
+                }
+            }
+            line_number += 2; // 2 additional instructions are added
+            // Calculate offset for the branch instruction after updating line numbers
+            int offset = (instruction_labels[terms[3]] - line_number - 1);
+            // Implemented using slt, xori, and bne instructions
+            // slt at, rs, rt sets the assembler temporary (at) register if rs < rt
+            write_binary(encode_Rtype(0, registers[terms[1]], registers[terms[2]], 1, 0, 42), inst_outfile);
+            // xori at, at, 1 inverts the result of slt
+            write_binary(encode_Itype(14, 1, 1, 1), inst_outfile);
+            // bne at, $0, label
+            write_binary(encode_Itype(5, 1, 0, offset), inst_outfile);
         }
-        else if (inst_type == "jalr")
-        {
-            write_binary(encode_jalr(inst.substr(space + 1), inst_type), instruction_out);
+        else if (inst_type == "ble") {
+            // ble rs, rt, label
+            // Update line numbers for labels before calculating the offset
+            for (auto& label : instruction_labels) {
+                if(label.second > line_number) {
+                    label.second += 2;
+                }
+            }
+            line_number += 2; // 2 additional instructions are added
+            // Calculate offset for the branch instruction after updating line numbers
+            int offset = (instruction_labels[terms[3]] - line_number - 1);
+            // Implemented using slt, xori, and bne instructions
+            // slt at, rt, rs sets the assembler temporary (at) register if rt < rs
+            write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[1]], 1, 0, 42), inst_outfile);
+            // xori at, at, 1 inverts the result of slt
+            write_binary(encode_Itype(14, 1, 1, 1), inst_outfile);
+            // bne at, $0, label
+                write_binary(encode_Itype(5, 1, 0, offset), inst_outfile);            
         }
-        else if (inst_type == "la")
-        {
-            write_binary(encode_la(inst.substr(space + 1), inst_type, static_labels), instruction_out);
+        else if (inst_type == "bgt") {
+            // bgt rs, rt, label
+            // Update line numbers for labels before calculating the offset
+            for (auto& label : instruction_labels) {
+                if(label.second > line_number) {
+                    label.second += 1; // Only 1 additional instruction (slt) is added before the branch
+                }
+            }
+            line_number += 1; // 1 additional instruction (slt) is added
+
+            // Calculate offset for the branch instruction after updating line numbers
+            int offset = (instruction_labels[terms[3]] - line_number - 1);
+
+            // Implemented using slt and bne instructions
+            // slt at, rt, rs sets the assembler temporary (at) register if rt < rs
+            write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[1]], 1, 0, 42), inst_outfile);
+            // bne at, $0, label
+            write_binary(encode_Itype(5, 1, 0, offset), inst_outfile);
         }
-        else if (inst_type == "syscall")
-        {
-            int t = 53260;
-            write_binary(t, instruction_out);
+            // Handling of blt pseudoinstruction
+        else if (inst_type == "blt") {
+            // blt rs, rt, label
+            // Update line numbers for labels before calculating the offset
+            for (auto& label : instruction_labels) {
+                if(label.second > line_number) {
+                    label.second += 1; // Only 1 additional instruction (slt) is added before the branch
+                }
+            }
+            line_number += 1; // 1 additional instruction (slt) is added
+
+            // Calculate offset for the branch instruction after updating line numbers
+            int offset = (instruction_labels[terms[3]] - line_number - 1);
+
+            // Implemented using slt and bne instructions
+            // slt at, rs, rt sets the assembler temporary (at) register if rs < rt
+            write_binary(encode_Rtype(0, registers[terms[1]], registers[terms[2]], 1, 0, 42), inst_outfile);
+            // bne at, $0, label
+            write_binary(encode_Itype(5, 1, 0, offset), inst_outfile);
         }
-        curr_line++;
+            // Logical operations
+        if (inst_type == "and") {
+            // Bitwise AND operation between two registers
+            write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[3]], registers[terms[1]], 0, 36), inst_outfile);
+        }
+        else if (inst_type == "or") {
+            // Bitwise OR operation between two registers
+            write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[3]], registers[terms[1]], 0, 37), inst_outfile);
+        }
+        else if (inst_type == "nor") {
+            // Bitwise NOR operation between two registers
+            write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[3]], registers[terms[1]], 0, 39), inst_outfile);
+        }
+        else if (inst_type == "xor") {
+            // Bitwise XOR operation between two registers
+            write_binary(encode_Rtype(0, registers[terms[2]], registers[terms[3]], registers[terms[1]], 0, 38), inst_outfile);
+        }
+
+        // Immediate logical operations
+        else if (inst_type == "andi") {
+            // Bitwise AND operation between a register and an immediate value
+            write_binary(encode_Itype(12, registers[terms[2]], registers[terms[1]], stoi(terms[3])), inst_outfile);
+        }
+        else if (inst_type == "ori") {
+            // Bitwise OR operation between a register and an immediate value
+            write_binary(encode_Itype(13, registers[terms[2]], registers[terms[1]], stoi(terms[3])), inst_outfile);
+        }
+        else if (inst_type == "xori") {
+            // Bitwise XOR operation between a register and an immediate value
+            write_binary(encode_Itype(14, registers[terms[2]], registers[terms[1]], stoi(terms[3])), inst_outfile);
+        }
+
+        // Load Upper Immediate
+        else if (inst_type == "lui") {
+            // Load an immediate value into the upper 16 bits of a register
+            write_binary(encode_Itype(15, 0, registers[terms[1]], stoi(terms[3])), inst_outfile);
+        }
+
+
+        line_number++; //count next line
     }
 }
 
-int encode_R(const std::string &inst, std::string instp)
-{
-    std::vector<std::string> reg_list = split(inst, WHITESPACE + ",");
-    if (instp == "add")
-    {
-        return encode_Rtype(0, registers[reg_list[1]], registers[reg_list[2]], registers[reg_list[0]], 0, 32);
-    }
-    else if (instp == "sub")
-    {
-        return encode_Rtype(0, registers[reg_list[1]], registers[reg_list[2]], registers[reg_list[0]], 0, 34);
-    }
-    else if (instp == "mult")
-    {
-        return encode_Rtype(0, registers[reg_list[0]], registers[reg_list[1]], 0, 0, 24);
-    }
-    else if (instp == "div")
-    {
-        return encode_Rtype(0, registers[reg_list[0]], registers[reg_list[1]], 0, 0, 26);
-    }
-    else if (instp == "mflo")
-    {
-        return encode_Rtype(0, 0, 0, registers[reg_list[0]], 0, 18);
-    }
-    else if (instp == "mfhi")
-    {
-        return encode_Rtype(0, 0, 0, registers[reg_list[0]], 0, 16);
-    }
-    else if (instp == "slt")
-    {
-        return encode_Rtype(0, registers[reg_list[1]], registers[reg_list[2]], registers[reg_list[0]], 0, 42);
-    }
-    else if (instp == "jr")
-    {
-        return encode_Rtype(0, registers[reg_list[0]], 0, 0, 0, 8);
-    }
-    return 0;
-}
-
-int encode_Ri(const std::string &inst, std::string instp)
-{
-    std::vector<std::string> reg_list = split(inst, WHITESPACE + ",");
-    if (instp == "addi")
-    {
-        int imm = stoi(reg_list[2]);
-        return encode_Itype(8, registers[reg_list[0]], (imm), registers[reg_list[1]]);
-    }
-    else if (instp == "sll")
-    {
-        return encode_Stype(0, registers[reg_list[0]], stoi(reg_list[2]), registers[reg_list[1]], 0);
-    }
-    else if (instp == "srl")
-    {
-        return encode_Stype(0, registers[reg_list[0]], stoi(reg_list[2]), registers[reg_list[1]], 2);
-    }
-    return 0;
-}
-
-int encode_la(const std::string &inst, std::string instp, std::unordered_map<int, std::string> static_labels)
-{
-    std::vector<std::string> reg_list = split(inst, WHITESPACE + "," + "(");
-    for (auto x : static_labels)
-    {
-        int a = x.second.find(":");
-        std::string str = x.second.substr(0, a);
-        if (str == reg_list[1])
-        {
-            return (8 << 26) + (0 << 21) + (registers[reg_list[0]] << 16) + (x.first);
-        }
-    }
-    return 0;
-}
-
-int encode_lw(const std::string &inst, std::string instp)
-{
-    std::vector<std::string> reg_list = split(inst, WHITESPACE + "," + "(");
-    if (instp == "lw")
-    {
-        return encode_Itype(35, registers[reg_list[0]], stoi(reg_list[1]), registers[reg_list[2].substr(0, reg_list[2].find(")"))]);
-    }
-    else if (instp == "sw")
-    {
-        return encode_Itype(43, registers[reg_list[0]], stoi(reg_list[1]), registers[reg_list[2].substr(0, reg_list[2].find(")"))]);
-    }
-    return 0;
-}
-
-int encode_branch(const std::string &inst, std::string instp, std::unordered_map<std::string, int> labels, int ln)
-{
-    std::vector<std::string> reg_list = split(inst, WHITESPACE + ",");
-    int num_inst_func = labels.find(reg_list[2])->second;
-    num_inst_func = num_inst_func - ln - 1;
-
-    if (num_inst_func < 0)
-    {
-        num_inst_func = 65535 & num_inst_func;
-    }
-    if (instp == "beq")
-    {
-        return encode_Btype(4, registers[reg_list[0]], registers[reg_list[1]], num_inst_func);
-    }
-    else if (instp == "bne")
-    {
-        return encode_Btype(5, registers[reg_list[0]], registers[reg_list[1]], num_inst_func);
-    }
-    return 0;
-}
-
-int encode_j(const std::string &inst, std::string instp, std::unordered_map<std::string, int> labels)
-{
-    std::vector<std::string> reg_list = split(inst, WHITESPACE + ",");
-    int num_inst_func = (labels.find(reg_list[0])->second);
-    if (instp == "j")
-    {
-        return encode_Jtype(2, num_inst_func);
-    }
-    else if (instp == "jal")
-    {
-        return encode_Jtype(3, num_inst_func);
-    }
-    return 0;
-}
-
-int encode_jalr(const std::string &inst, std::string instp)
-{
-    std::vector<std::string> reg_list = split(inst, WHITESPACE + ",");
-    if (reg_list.size() > 1)
-    {
-        return encode_others(0, registers[reg_list[0]], registers[reg_list[1]], 9);
-    }
-    else
-    {
-        return encode_others(0, registers[reg_list[0]], registers["$ra"], 9);
-    }
-    return 0;
-}
 #endif

@@ -8,10 +8,12 @@ _syscallStart_:
     beq $v0, $0, _syscall0  # Jump to syscall 0
     addi $k1, $0, 1
     beq $v0, $k1, _syscall1  # Jump to syscall 1
-    addi $k1, $0, 5
+    addi $k1, $0, 4
     beq $v0, $k1, _syscall4  # Jump to syscall 4
-    addi $k1, $0, 8
+    addi $k1, $0, 5
     beq $v0, $k1, _syscall5  # Jump to syscall 5
+    addi $k1, $0, 8
+    beq $v0, $k1, _syscall8  # Jump to syscall 8
     addi $k1, $0, 9
     beq $v0, $k1, _syscall9  # Jump to syscall 9
     addi $k1, $0, 10
@@ -19,7 +21,7 @@ _syscallStart_:
     addi $k1, $0, 11
     beq $v0, $k1, _syscall11  # Jump to syscall 11
     addi $k1, $0, 12
-    beq $v0, $k1, _syscall12  # Jump to syscall 12
+    beq $v0, $k1, _syscall61    #Jump to syscall 61
     # Error state - this should never happen - treat it like an end program
     j _syscall10
 
@@ -35,33 +37,40 @@ _syscall0:
 
 # Print integer
 _syscall1:
-    # Print Integer code goes here
-    addi $k1, $0, 10    # Division factor
-    jal div_f
+    addi $sp, $sp, -12
+    addi $k1, $sp, 0        
+
+    # Save registers 
+    sw $k0, 8($sp)
+    sw $t2, 4($sp)
+    sw $t3, 0($sp)
+
+    addi $t2, $0, 10        # Div factor
+    addi $k0, $a0, 0    
+
+    readInt:
+        div $k0, $t2        # Divide 10 each time 
+        mflo $k0            
+        mfhi $t3            # Remainder
+        addi $sp, $sp, -4
+        sw $t3, 0($sp)
+        bne $k0, $0, readInt   
+
+    printIntLoop:
+        lw $k0, 0($sp)
+        addi $k0, $k0, 48   
+        sw $k0, -256($0)        # Console output   
+        addi $sp, $sp, 4
+        bne $sp, $k1, printIntLoop
+
+    # Deallocate memory
+    lw $t3, 0($sp)
+    addi $sp, $sp, 4
+    lw $t2, 0($sp)
+    addi $sp, $sp, 4
+    lw $k0, 0($sp)
+    addi $sp, $sp, 4
     jr $k0
-
-    division_function: 
-        addi $sp, $sp, -12      # Allocate 8 bytes of stack memory
-        sw $ra, 0($sp)
-        sw $s0, 4($sp)
-
-        div $a0, $k1
-        mflo $a0
-        mfhi $s0
-        sw $s0, 8($sp)          # Save the mfhi value
-        beq $a0, $0, end_recursion
-
-        jal division_function
-
-    end_recursion:
-        lw $s0, 8($sp)
-        addi $a0, $s0, 48       # Convert the digit to its ASCII representation
-        sw $a0, -256($0)        # Console output
-
-        lw $ra, 0($sp)
-        lw $s0, 4($sp)
-        addi $sp, $sp, 12       # Deallocate 8 bytes of stack memory
-        jr $ra
 
 
 # Read int (ascii)
@@ -163,7 +172,7 @@ _syscall5:
         jr $k0
 
 
-#Heap allocation
+# Heap allocation
 _syscall9:
     addi $k1, $a0, 0    # get number of bytes in $a0
     lw $v0, -4096($0)
@@ -207,7 +216,8 @@ _syscall4:
     end:
     jr $k0
 
- # read string
+
+# Read string
 _syscall8:
     addi $sp, $sp, -4 
     sw $t2, 0($sp)
@@ -235,3 +245,4 @@ _syscall8:
         jr $k0
 
 _syscallEnd_:
+
