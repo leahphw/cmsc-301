@@ -31,7 +31,7 @@ main:
     reverse_loop:
         beq $s5, $zero, EndReadIntLoop    # If $s5 is 0, finish the loop
         addi $s1, $0, 10        # s1 = 10
-        div $s5, $s1            # Divide $s5 by 10; quotient in $lo, remainder in $hi
+        div $s5, $s1            # Divide $s5 by 10; quotient in lo, remainder in hi
         mflo $s5                # Move quotient back to $s5 for next iteration
         mfhi $t3                # Move remainder to $t3
 
@@ -174,38 +174,38 @@ Read2ndInt:
     addi $s5, $0, 0
     addi $t5, $0, 0
 
-    read2ndIntLoop:
-        addi $s1, $0, 10        # s1 = 10
+read2ndIntLoop:
+    addi $s1, $0, 10        # s1 = 10
 
-        li $v0, 5               # Read integer syscall
-        syscall
-        addi $s2, $v0, 0        # s2 = int 0-9
+    li $v0, 5               # Read integer syscall
+    syscall
+    addi $s2, $v0, 0        # s2 = int 0-9
 
-        slt $s3, $s2, $s1       # If 0-9
-        beq $s3, $0, reverse2nd_loop    # Else, is a char
+    slt $s3, $s2, $s1       # If 0-9
+    beq $s3, $0, reverse2nd_loop    # Else, is a char
 
-        mult $s2, $s0           # s2 = s2 * s0 (1, 10, 100...)
-        mflo $s2
+    mult $s2, $s0           # s2 = s2 * s0 (1, 10, 100...)
+    mflo $s2
 
-        mult $s0, $s1           # s0 = (1, 10, 100...)
-        mflo $s0
+    mult $s0, $s1           # s0 = (1, 10, 100...)
+    mflo $s0
 
-        add $s5, $s5, $s2       # s5 = s5 + s2
-        j read2ndIntLoop
+    add $s5, $s5, $s2       # s5 = s5 + s2
+    j read2ndIntLoop
 
-    reverse2nd_loop:
-        beq $s5, $zero, EndRead2ndIntLoop    # If $s5 is 0, finish the loop
-        addi $s1, $0, 10        # s1 = 10
-        div $s5, $s1            # Divide $s5 by 10; quotient in $lo, remainder in $hi
-        mflo $s5                # Move quotient back to $s5 for next iteration
-        mfhi $t3                # Move remainder to $t3
+reverse2nd_loop:
+    beq $s5, $zero, EndRead2ndIntLoop    # If $s5 is 0, finish the loop
+    addi $s1, $0, 10        # s1 = 10
+    div $s5, $s1            # Divide $s5 by 10; quotient in lo, remainder in hi
+    mflo $s5                # Move quotient back to $s5 for next iteration
+    mfhi $t3                # Move remainder to $t3
 
-        mult $t5, $s1           # Multiply current reversed number by 10
-        mflo $t5
-        add $t5, $t5, $t3       # Add the last digit to the reversed number
+    mult $t5, $s1           # Multiply current reversed number by 10
+    mflo $t5
+    add $t5, $t5, $t3       # Add the last digit to the reversed number
 
-        j reverse2nd_loop          # Jump back to the start of the loop
+    j reverse2nd_loop          # Jump back to the start of the loop
 
-    EndRead2ndIntLoop:
-        add $s6, $s2, $0
-        jr $ra                  # Return to the caller
+EndRead2ndIntLoop:
+    add $s6, $s2, $0
+    jr $ra                  # Return to the caller
