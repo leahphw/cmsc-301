@@ -1,69 +1,64 @@
-# This is starter code, so that you know the basic format of this file.
-# Use _ in your system labels to decrease the chance that labels in the "main"
-# program will conflict
-
-.data
-.text
-_syscallStart_:
-    beq $v0, $0, _syscall0  # Jump to syscall 0
+_start_of_syscall:
+    beq $v0, $0, _syscall0 #jump to syscall 0
     addi $k1, $0, 1
-    beq $v0, $k1, _syscall1  # Jump to syscall 1
+    beq $v0, $k1, _syscall1 #jump to syscall 1
     addi $k1, $0, 4
-    beq $v0, $k1, _syscall4  # Jump to syscall 4
+    beq $v0, $k1, _syscall4 #jump to syscall 4
     addi $k1, $0, 5
-    beq $v0, $k1, _syscall5  # Jump to syscall 5
+    beq $v0, $k1, _syscall5 #jump to syscall 5
     addi $k1, $0, 8
-    beq $v0, $k1, _syscall8  # Jump to syscall 8
+    beq $v0, $k1, _syscall8 #jump to syscall 8
     addi $k1, $0, 9
-    beq $v0, $k1, _syscall9  # Jump to syscall 9
+    beq $v0, $k1, _syscall9 #jump to syscall 9
     addi $k1, $0, 10
-    beq $v0, $k1, _syscall10  # Jump to syscall 10
+    beq $v0, $k1, _syscall10 #jump to syscall 10
     addi $k1, $0, 11
-    beq $v0, $k1, _syscall11  # Jump to syscall 11
+    beq $v0, $k1, _syscall11 #jump to syscall 11
     addi $k1, $0, 12
-    beq $v0, $k1, _syscall61    #Jump to syscall 61
-    # Error state - this should never happen - treat it like an end program
+    beq $v0, $k1, _syscall12 #jump to syscall 12
+    addi $k1, $0, 60
+    beq $v0, $k1, _syscall60 #jump to syscall 60
+    addi $k1, $0, 61
+    beq $v0, $k1, _syscall61 #jump to syscall 61
+    #Error state - this should never happen - treat it like an end program
     j _syscall10
 
-
-# Do init stuff
+#Initialization
 _syscall0:
-    # Initialization goes here
-    addi $sp, $sp, -4096        # Initialize stack pointer
-    la $k1, _END_OF_STATIC_MEMORY_      # Load heap pointer
-    sw $k1, -4096($0)      # Store heap pointer address
+    addi $sp, $0, -4096 #Initialize stack pointer
+    la $k1, _END_OF_STATIC_MEMORY_  # put the address of the end of static memory into k1
+    sw $k1, 1073741564($0)  #set heap point to 0x3FFFFEFC
     j _syscallEnd_
 
-
-# Print integer
+#Print Integer
 _syscall1:
     addi $sp, $sp, -12
-    addi $k1, $sp, 0        
+    addi $k1, $sp, 0    #Mark start point for print
 
-    # Save registers 
+    #Save registers on stack
     sw $k0, 8($sp)
     sw $t2, 4($sp)
     sw $t3, 0($sp)
 
-    addi $t2, $0, 10        # Div factor
-    addi $k0, $a0, 0    
+    addi $t2, $0, 10
+    addi $k0, $a0, 0    #k0 contains integer stored in a0
 
     readInt:
-        div $k0, $t2        # Divide 10 each time 
-        mflo $k0            
-        mfhi $t3            # Remainder
+        div $k0, $t2    #Divide 10 each time to get each digit
+        mflo $k0    #k0 contains result of division
+        mfhi $t3    #t3 contains remainder of division
         addi $sp, $sp, -4
         sw $t3, 0($sp)
-        bne $k0, $0, readInt   
+        bne $k0, $0, readInt    #finish/continue reading
 
     printIntLoop:
         lw $k0, 0($sp)
-        addi $k0, $k0, 48   
-        sw $k0, -256($0)        # Console output   
+        addi $k0, $k0, 48   #add 48 to give ascii for 0-9
+        sw $k0, -256($0)    #save to 0x3FFFF00 (Terminal)
         addi $sp, $sp, 4
         bne $sp, $k1, printIntLoop
 
-    # Deallocate memory
+    #Restore registers
     lw $t3, 0($sp)
     addi $sp, $sp, 4
     lw $t2, 0($sp)
@@ -72,25 +67,23 @@ _syscall1:
     addi $sp, $sp, 4
     jr $k0
 
-
-# Read int (ascii)
+#Read Integer
+#ASCII 48-57
 _syscall5:
-    addi $sp, $sp, -12 
+    addi $sp, $sp, -12 #allocate three space
     sw $t2, 0($sp)
     sw $t3, 4($sp)
     sw $k0, 8($sp)
-    addi $t2, $0, 10 # decimal power
-    addi $k1, $0, 0
-
-    # loop to read each digit
-    readDigitLoop:
+    addi $t2, $0, 10 #used to move the number to left
+    addi $k1, $0, 0 #accumulation starts at 0
+    readLoop:
         addi $t3, $0, 48
-        lw $k0, -240($0) # keyboard ready at 0xFFFFFF10
-        beq $k0, $0, _syscall5 # if no keypress then end
-        lw $k0, -236($0) # read keyboard character at 0xFFFFFF14
-        sw $0, -240($0) # reset
+        lw $k0, -240($0) #0xFFFFFF10 = keyboard ready
+        beq $k0, $0, _syscall5 #if no keypress, jump to end
+        lw $k0, -236($0) #0xFFFFFF14 = read keyboard character
+        sw $0, -240($0) #set keyboard ready to 0 to get next character
         beq $k0, $t3, ascii0
-        addi $t3, $t3, 1 # next iter
+        addi $t3, $t3, 1 #for next number
         beq $k0, $t3, ascii1
         addi $t3, $t3, 1
         beq $k0, $t3, ascii2
@@ -111,11 +104,11 @@ _syscall5:
         add $k1, $0, $k0
         j end_syscall5
     ascii0:
-        mult $k1, $t2 
+        mult $k1, $t2 #when it is zero, do nothing, just move to left
         mflo $k1
         j end_syscall5:
     ascii1:
-        mult $k1, $t2 
+        mult $k1, $t2 #if not, we move to left and add the corresponding number
         mflo $k1
         addi $k1, $k1, 1
         j end_syscall5
@@ -162,8 +155,8 @@ _syscall5:
 
 
     end_syscall5:
-        add $v0, $k1, $0
-        lw $t2, 0($sp) # deallocation stack space
+        add $v0, $k1, $0 #store k1
+        lw $t2, 0($sp) #deallocation
         addi $sp $sp, 4
         lw $t3, 0($sp)
         addi $sp $sp, 4
@@ -171,63 +164,62 @@ _syscall5:
         addi $sp, $sp, 4
         jr $k0
 
-
-# Heap allocation
+#Heap allocation
 _syscall9:
-    addi $k1, $a0, 0    # get number of bytes in $a0
-    lw $v0, -4096($0)
-    add $k1, $k1, $v0   # return new pointer
-    sw $k1, -4096($0)
+    addi $k1, $a0, 0    #request number of bytes in $a0
+    lw $v0, 1073741564($0)
+    add $k1, $k1, $v0   #return a pointer in v0
+    sw $k1, 1073741564($0)
     jr $k0
 
-
-# "End" the program
+#"End" the program
 _syscall10:
     j _syscall10
 
 
-# Print character
-_syscall11:
-    # Print character code goes here
-    sw $a0, -256($0)    # Console output
-    jr $k0
-
-
-# Read character
+#print character
 _syscall12:
-    # Read character code goes here
-    lw $k1, -240($0)    # Whether a key has been pressed on the console or terminal
-    beq $k1, $0, _syscall12     # When key press not available
-    lw $v0, -236($0)    # Character read from the console or terminal input
-    sw $0, -240($0)      # Console output
-    jr $k0  
+    sw $a0, -256($0)    #Print char in a0 to 0x3FFFF00 (terminal)
+    jr $k0
 
-
-# Extra challenge syscalls
-# Print string
-_syscall4:
-    print_string_loop:
-    lw $k1, 0($a0)      # Load the next character from the string
-    beq $k1, $0, end    # If the character is null
-    sw $k1, -256($0)    # Console output
-    addi $a0, $a0, 4    # Increment the string pointer to the next character
-    j print_string_loop
-
-    end:
+#read character
+_syscall11:
+    lw $k1, -240($0) #lw from 0x3FFFF10 (keyboard)
+    beq $k1, $0, _syscall11 #Check keypress
+    lw $k1, -236($0) #read char from 0x3FFFF14
+    sw $0, -240($0) #increment to the next keypress
+    addi $v0, $k1, 0 #save character value in $v0
     jr $k0
 
 
-# Read string
+    #print string
+_syscall4:
+  addi $sp, $sp, -4
+  sw $k0, 0($sp)
+  addi $k0, $a0, 0
+  printStringLoop:
+    lw $k1, 0($k0)
+    beq $k1, $0, strEnd
+    sw $k1, -256($0)
+    addi $k0, $k0, 4
+    j printStringLoop
+    strEnd:
+      lw $k0, 0($sp)
+      addi $sp, $sp, 4
+      jr $k0
+
+
+ #read string
 _syscall8:
-    addi $sp, $sp, -4 
+    addi $sp, $sp, -4 #allocate space
     sw $t2, 0($sp)
-    addi $t2, $0, 0 # keep track of space usage
+    addi $t2, $0, 0 #t2 keep track of how much space we use on sp
     
     readStringLoop:
-        lw $k0, -240($0) 
-        beq $k0, $0, _syscall8 # no keypress
-        lw $k0, -236($0) # read next char
-        sw $0, -240($0) # reset
+        lw $k0, -240($0) #0xFFFFFF10 = keyboard ready
+        beq $k0, $0, _syscall8 #if no keypress, keep trying 
+        lw $k0, -236($0) #0xFFFFFF14 = read keyboard character
+        sw $0, -240($0) #set keyboard ready to 0 to get next character
         addi $k1, $0, 10
         beq $k0, $k1, endreadStringLoop
         addi $sp, $sp, -4
@@ -237,12 +229,14 @@ _syscall8:
     endreadStringLoop:
         addi $sp, $sp, -4
         addi $t2, $t2, 4
-        sw $0, 0($sp) 
+        sw $0, 0($sp)  #add '0' to string
         add $sp, $sp, $t2
-        sw $sp, -4096($0) # save to heap
-        lw $t2, 0($sp)      # deallocation
+        sw $sp, 1073741564($0) #save to heap
+        lw $t2, 0($sp)      #deallocation
         addi $sp, $sp, 4
         jr $k0
 
-_syscallEnd_:
 
+
+_syscallEnd_:
+    j main
